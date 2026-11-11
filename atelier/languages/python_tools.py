@@ -38,7 +38,7 @@ def missing_imports(root,source):
     return sorted(candidates)
 
 
-def insert_import(source,statement):
+def import_insertion_line(source):
     tree=ast.parse(source);lines=source.splitlines(True)
     position=tree.body[0].lineno-1 if tree.body else len(lines)
     for index,node in enumerate(tree.body):
@@ -46,7 +46,12 @@ def insert_import(source,statement):
             position=node.end_lineno;continue
         if isinstance(node,ast.ImportFrom) and node.module=='__future__':position=node.end_lineno;continue
         break
-    lines.insert(position,statement+'\n')
+    return position
+
+
+def insert_import(source,statement):
+    lines=source.splitlines(True)
+    lines.insert(import_insertion_line(source),statement+'\n')
     return ''.join(lines)
 
 

@@ -121,6 +121,64 @@ class StudioIntegration(unittest.TestCase):
         self.assertEqual(editor.viewportMargins().left(), editor.gutter_width())
         self.assertFalse(editor.gutter.grab().isNull())
 
+    def test_completion_auto_import_is_a_single_undo(self):
+        window = self.window
+        (self.root / 'src').mkdir()
+        for name in ('auto_provider_a.py', 'src/auto_provider_b.py'):
+            (self.root / name).write_text('class Path:\n    pass\n', encoding='utf-8')
+        doc = self.file('auto_import.py', 'candidate = Pat\n')
+        editor = doc.editor
+        cursor = editor.textCursor()
+        cursor.setPosition(len('candidate = Pat'))
+        editor.setTextCursor(cursor)
+        next_request = 0
+
+        def path_item():
+            nonlocal next_request
+            matching = {}
+            for index in range(editor.popup.count()):
+                item = editor.popup.item(index)
+                if item.text().startswith('Path  ·  '):
+                    matching[item.text().rsplit('  ·  ', 1)[1]] = item
+            if {'pathlib', 'auto_provider_a', 'auto_provider_b'} <= matching.keys():
+                return matching['pathlib']
+            if time.monotonic() >= next_request:
+                next_request = time.monotonic() + 0.6
+                window.complete(doc)
+            return None
+
+        self.wait(path_item, timeout=40)
+        editor.accept_completion(path_item())
+        self.assertEqual('from pathlib import Path\ncandidate = Path()\n', editor.toPlainText())
+        editor.undo()
+        self.assertEqual('candidate = Pat\n', editor.toPlainText())
+        self.assertFalse((self.root / '.ropeproject').exists())
+
+    def test_dialog_style_spaces_forms_and_preserves_custom_actions(self):
+        from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFormLayout, QLineEdit, QScrollArea
+        from atelier.ui.settings import SettingsDialog
+
+        dialog = QDialog(self.window)
+        form = QFormLayout(dialog)
+        form.addRow('Alan', QLineEdit())
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText('Değişiklikleri uygula')
+        form.addRow(buttons)
+        dialog.show()
+        try:
+            self.assertEqual(16, form.contentsMargins().left())
+            self.assertEqual(QFormLayout.RowWrapPolicy.WrapLongRows, form.rowWrapPolicy())
+            self.assertEqual('İptal', buttons.button(QDialogButtonBox.StandardButton.Cancel).text())
+            self.assertEqual('Değişiklikleri uygula', buttons.button(QDialogButtonBox.StandardButton.Ok).text())
+        finally:
+            dialog.close()
+        settings = SettingsDialog(self.window)
+        settings.show()
+        try:
+            self.assertGreaterEqual(len(settings.findChildren(QScrollArea)), 4)
+        finally:
+            settings.close()
+
     def test_project_notes_filter_navigate_and_refresh_open_files(self):
         window = self.window
         closed = self.root / 'closed_notes.py'

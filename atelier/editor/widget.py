@@ -407,11 +407,30 @@ class Editor(MultiCursorMixin, QPlainTextEdit):
         add_call = callable_item and '(' not in value and not suffix.lstrip().startswith('(') and not import_context
         if add_call:
             value += '()'
+        start, end = cursor.selectionStart(), cursor.selectionEnd()
+        extra = []
+        for addition in data.get('additionalTextEdits') or ():
+            region = addition['range']
+            left, right = self.offset(region['start']), self.offset(region['end'])
+            if right <= start or left >= end:
+                extra.append((left, right, addition['newText']))
+        cursor.beginEditBlock()
         cursor.insertText(value)
         if add_call or (callable_item and value.endswith('()')):
             cursor.movePosition(QTextCursor.MoveOperation.PreviousCharacter)
         elif callable_item and not import_context and suffix.startswith('('):
             cursor.movePosition(QTextCursor.MoveOperation.NextCharacter)
+        cursor.setKeepPositionOnInsert(True)
+        offset = units(value) - (end - start)
+        for left, right, text in sorted(extra, reverse=True):
+            if right > start and left >= end:
+                left, right = left + offset, right + offset
+            additional = QTextCursor(self.document())
+            additional.setPosition(left)
+            additional.setPosition(right, QTextCursor.MoveMode.KeepAnchor)
+            additional.insertText(text)
+        cursor.endEditBlock()
+        cursor.setKeepPositionOnInsert(False)
         self.setTextCursor(cursor)
         if callable_item and not import_context:
             self.signature_requested.emit()

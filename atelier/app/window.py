@@ -6,6 +6,7 @@ from PySide6.QtCore import QEvent, QTimer, QSettings, QProcess, Signal
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
 from atelier.debugger.client import Debugger
+from atelier.languages.auto_import import AutoImportIndex
 from atelier.ui.theme import PALETTES
 from atelier.storage.monitor import FileMonitor
 from atelier.storage.sessions import SessionStore
@@ -36,6 +37,8 @@ class Window(PresentationFeatures, LanguageFeatures, FilesFeatures, ProjectsFeat
 
     def __init__(self, root=None, settings=None):
         super().__init__()
+        from atelier.ui.dialog_style import install_dialog_style
+        install_dialog_style()
         self.settings = settings or QSettings('Atelier', 'PythonEditor')
         self.project_profiles = ProjectSettings(self.settings)
         self.recent_projects = RecentProjects(self.settings)
@@ -74,6 +77,8 @@ class Window(PresentationFeatures, LanguageFeatures, FilesFeatures, ProjectsFeat
         self.documents = []
         self.closed_tabs = []
         self.lsp = None
+        self.auto_import = AutoImportIndex(self)
+        self.auto_import.loaded.connect(self.refresh_import_completion)
         self.workers = []
         self.save_workers = []
         self.validation_workers = []
@@ -219,6 +224,7 @@ class Window(PresentationFeatures, LanguageFeatures, FilesFeatures, ProjectsFeat
                 editor.signature_timer.stop()
                 editor.hover_timer.stop()
         self.lsp.stop()
+        self.auto_import.reset()
         if self.pending_update:
             from atelier.runtime.updates import launch_windows_update
             payload, installation = self.pending_update

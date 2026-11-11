@@ -68,8 +68,9 @@ class MergeDialog(QDialog):
         self.setWindowTitle('Git çakışmalarını çöz — ' + doc.path.name)
         self.resize(1120, 760)
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel(
-            'Her çakışma için seçim yapın. Sonuç alanını ayrıca düzenleyebilirsiniz. Yerel/Gelen etiketleri dosyadaki işaret sırasını gösterir.'))
+        instructions = QLabel('Her çakışma için bir taraf seçin veya iki tarafı birleştirin.')
+        instructions.setWordWrap(True)
+        layout.addWidget(instructions)
         self.listing = QListWidget()
         self.listing.setMaximumHeight(100)
         for i, chunk in enumerate(self.chunks):
@@ -82,6 +83,7 @@ class MergeDialog(QDialog):
                             ('Gelen (ikinci taraf)', self.theirs)]:
             page = QWidget()
             box = QVBoxLayout(page)
+            box.setContentsMargins(0, 0, 0, 0)
             box.addWidget(QLabel(title))
             box.addWidget(view)
             view.setReadOnly(True)
@@ -94,8 +96,9 @@ class MergeDialog(QDialog):
             button.clicked.connect(lambda checked=False, value=choice: self.choose(value))
             row.addWidget(button)
         layout.addLayout(row)
-        layout.addWidget(
-            QLabel('Sonuç · doğrudan düzenlenebilir (bir seçim değişirse sonuç yeniden oluşturulur)'))
+        result_label = QLabel('Sonuç')
+        result_label.setToolTip('Sonucu düzenleyebilirsiniz. Taraf seçimi değiştiğinde sonuç yeniden oluşturulur.')
+        layout.addWidget(result_label)
         self.result = QPlainTextEdit()
         self.generated = self.original
         self.result.setPlainText(self.original)

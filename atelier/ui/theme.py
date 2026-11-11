@@ -69,6 +69,15 @@ def stylesheet(name):
     QDockWidget {{ titlebar-close-icon:none; color:{text}; }}
     QDockWidget::title {{ background:{panel}; padding:7px; }}
     QDialogButtonBox {{ background:transparent; }}
+    QDialog QDialogButtonBox QPushButton {{ min-width:72px; }}
+    QDialog QPushButton:default {{ border-color:{accent}; background:{selection}; }}
+    QDialog QLabel, QDialog QCheckBox {{ font-size:13px; }}
+    QDialog QLabel {{ background:transparent; }}
+    QDialog QListWidget::item {{ padding:6px 8px; }}
+    QDialog QGroupBox {{ border:1px solid {border}; border-radius:6px; margin-top:12px; padding:10px; }}
+    QDialog QGroupBox::title {{ subcontrol-origin:margin; left:8px; padding:0 4px; color:{muted}; }}
+    QDialog QTreeWidget, QDialog QListWidget, QDialog QPlainTextEdit {{ border:1px solid {border}; border-radius:5px; }}
+    QDialog QLineEdit, QDialog QComboBox {{ min-height:20px; }}
     QTreeView::item, QListWidget::item, QTreeWidget::item {{ padding: 5px 3px; }}
     QTreeView::item:selected, QListWidget::item:selected, QTreeWidget::item:selected {{ background: {selection}; color: {text}; }}
     QHeaderView::section {{ background: {panel}; color: {muted}; border: 0; padding: 7px; }}

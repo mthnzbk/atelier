@@ -177,7 +177,7 @@ class PythonEnvironmentDialog(QDialog):
         self.window = window
         self.root = Path(window.root)
         self.setWindowTitle('Python ortamları ve paketler — ' + self.root.name)
-        self.resize(960, 730)
+        self.resize(900, 670)
         self.process = QProcess(self)
         self.process.readyReadStandardOutput.connect(self.read_output)
         self.process.readyReadStandardError.connect(self.read_errors)
@@ -191,7 +191,8 @@ class PythonEnvironmentDialog(QDialog):
         self.output = bytearray()
         self.mutable = []
         layout = QVBoxLayout(self)
-        self.active = QLabel('Projenin etkin Python ortamı: ' + window.interpreter)
+        self.active = QLabel('Etkin Python: ' + window.interpreter if window.interpreter
+                             else 'Etkin Python seçilmedi')
         self.active.setWordWrap(True)
         layout.addWidget(self.active)
         row = QHBoxLayout()
@@ -223,14 +224,13 @@ class PythonEnvironmentDialog(QDialog):
         self.button(create_row, 'Klasör seç…', self.browse_directory)
         self.button(create_row, 'Sanal ortam oluştur', self.create_environment)
         form.addRow(create_row)
-        note = QLabel('Oluşturma bitince yeni ortam seçilir. “Bu proje için kullan” ile etkinleştirebilirsiniz. '
-                      'Çalıştırma profilinde ayrıca Python belirtilmişse o tercih geçerlidir. '
-                      'Açık terminal eski ortamda kalır; değiştirmek için terminalde “Yeni terminal” seçin.')
+        note = QLabel('Oluşturduğunuz ortamı etkinleştirmek için “Bu proje için kullan”ı seçin.')
         note.setWordWrap(True)
         form.addRow(note)
         packages = QWidget()
         package_layout = QVBoxLayout(packages)
         tabs.addTab(packages, 'Paketler')
+        tabs.setCurrentWidget(packages)
         self.filter = QLineEdit()
         self.filter.setPlaceholderText('Kurulu paketlerde filtrele…')
         self.filter.textChanged.connect(self.filter_packages)

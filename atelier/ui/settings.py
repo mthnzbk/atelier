@@ -1,7 +1,7 @@
 import json
 import shutil
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QTabWidget, QWidget, QFormLayout, QCheckBox, QSpinBox, QLineEdit,
-                               QComboBox, QDialogButtonBox, QTreeWidget, QTreeWidgetItem, QKeySequenceEdit, QFontComboBox, QLabel, QPushButton)
+                               QComboBox, QDialogButtonBox, QTreeWidget, QTreeWidgetItem, QKeySequenceEdit, QFontComboBox, QLabel, QPushButton, QScrollArea, QFrame)
 from PySide6.QtGui import QFont
 from PySide6.QtCore import QSize
 from atelier.ui.theme import PALETTES
@@ -12,7 +12,7 @@ class SettingsDialog(QDialog):
         super().__init__(window)
         self.window = window
         self.setWindowTitle('Ayarlar')
-        self.resize(830, 580)
+        self.resize(760, 530)
         layout = QVBoxLayout(self)
         tabs = QTabWidget()
         layout.addWidget(tabs)
@@ -20,17 +20,23 @@ class SettingsDialog(QDialog):
         def page(title):
             widget = QWidget()
             form = QFormLayout(widget)
-            tabs.addTab(widget, title)
+            form.setContentsMargins(10, 10, 10, 10)
+            scroll = QScrollArea()
+            scroll.setFrameShape(QFrame.Shape.NoFrame)
+            scroll.setWidgetResizable(True)
+            scroll.setWidget(widget)
+            tabs.addTab(scroll, title)
             return form
 
         def check(form, label, value):
-            widget = QCheckBox()
+            widget = QCheckBox(label)
             widget.setChecked(value)
-            form.addRow(label, widget)
+            form.addRow(widget)
             return widget
 
         def spin(form, label, value, low, high):
             widget = QSpinBox()
+            widget.setMaximumWidth(125)
             widget.setRange(low, high)
             widget.setValue(value)
             form.addRow(label, widget)

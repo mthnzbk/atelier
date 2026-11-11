@@ -15,6 +15,7 @@ from atelier.languages.locations import definition_target, uri_path
 
 class LanguageFeatures:
     def start_lsp(self):
+        self.auto_import.reset()
         self.dismiss_definition_preview()
         self.profile_selector.refresh()
         if self.lsp:
@@ -207,6 +208,8 @@ class LanguageFeatures:
             return
 
         def receive(result):
+            if self.current is not doc or doc.editor is not editor:
+                return
             items = result.get('items', []) if isinstance(result, dict) else result or []
             popup = editor.popup
             popup.clear()
@@ -221,10 +224,18 @@ class LanguageFeatures:
                         row = QListWidgetItem(key + '  · şablon')
                         row.setData(Qt.ItemDataRole.UserRole, {'label': key, '_snippet': key})
                         popup.addItem(row)
-            for data in items[:150]:
+            proposals = self.auto_import.suggestions(doc, editor, before, prefix, items) if doc.language == 'python' else []
+            for data in [*items[:150], *proposals]:
                 if data.get('insertTextFormat', 1) == 2:
                     continue
-                row = QListWidgetItem(data['label'])
+                label = data['label']
+                for edit in data.get('additionalTextEdits') or ():
+                    match = re.match(r'^\s*(?:from\s+([\w.]+)\s+import\s+|import\s+([\w.]+))',
+                                     edit.get('newText', ''))
+                    if match:
+                        label += '  ·  ' + (match[1] or match[2])
+                        break
+                row = QListWidgetItem(label)
                 row.setData(Qt.ItemDataRole.UserRole, data)
                 row.setToolTip(data.get('detail', ''))
                 popup.addItem(row)
@@ -234,6 +245,11 @@ class LanguageFeatures:
             self.request_at('textDocument/completion', receive, doc)
         else:
             receive([])
+
+    def refresh_import_completion(self):
+        if (not self.closing and self.current and self.current.language == 'python'
+                and self.editor.hasFocus() and not self.editor.popup.isVisible()):
+            self.complete()
 
     def show_completion_popup(self, editor):
         popup = editor.popup

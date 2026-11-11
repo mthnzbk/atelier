@@ -25,7 +25,7 @@ class PythonStatusDialog(QDialog):
         buttons = QHBoxLayout()
         layout.addLayout(buttons)
         window.button(buttons, 'Proje ortamını hazırla…', self.prepare_project)
-        window.button(buttons, 'Python seç…', self.choose_python)
+        window.button(buttons, 'Yorumlayıcı seç…', self.choose_python)
         window.button(buttons, 'Yeniden tara', self.rescan)
         window.button(buttons, 'LSP’yi yeniden başlat', window.start_lsp)
         buttons.addStretch()

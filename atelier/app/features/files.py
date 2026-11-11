@@ -317,6 +317,8 @@ class FilesFeatures:
         self.update_position()
         if doc is self.current or target == self.root / 'atelier.toml':
             self.profile_selector.refresh()
+        if doc.language == 'python' and target.is_relative_to(self.root):
+            self.auto_import.invalidate()
         self.git_refresh_timer.start()
         return True
 

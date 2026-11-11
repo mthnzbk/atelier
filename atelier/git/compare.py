@@ -1,7 +1,8 @@
 import difflib
 from pathlib import Path
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QTextCursor, QTextFormat, QColor
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QComboBox, QLabel, QSplitter, QPlainTextEdit, QListWidget, QPushButton, QTextEdit
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QComboBox, QLabel, QSplitter, QPlainTextEdit, QListWidget, QPushButton, QTextEdit, QWidget
 from atelier.git.partial import selected_patch
 from atelier.ui.icons import icon
 
@@ -15,25 +16,43 @@ class GitCompare(QDialog):
         layout = QVBoxLayout(self)
         row = QHBoxLayout()
         self.mode = QComboBox()
-        self.mode.addItems(['Hazırlanmamış: index ↔ çalışma dosyası', 'Hazırlanmış: HEAD ↔ index'])
+        self.mode.addItems(['Hazırlanmamış değişiklikler', 'Hazırlanmış değişiklikler'])
+        self.mode.setItemData(0, 'Git dizini ↔ çalışma dosyası', Qt.ItemDataRole.ToolTipRole)
+        self.mode.setItemData(1, 'HEAD ↔ Git dizini', Qt.ItemDataRole.ToolTipRole)
         row.addWidget(self.mode)
         self.status = QLabel(str(path))
+        self.status.setTextFormat(Qt.TextFormat.PlainText)
+        self.status.setWordWrap(True)
         row.addWidget(self.status, 1)
         layout.addLayout(row)
         split = QSplitter()
         self.left = QPlainTextEdit(readOnly=True)
         self.right = QPlainTextEdit(readOnly=True)
+        self.side_labels = []
         for view in (self.left, self.right):
+            pane = QWidget()
+            pane_layout = QVBoxLayout(pane)
+            pane_layout.setContentsMargins(0, 0, 0, 0)
+            label = QLabel()
+            self.side_labels.append(label)
+            pane_layout.addWidget(label)
             view.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
             view.setStyleSheet('font-family:Consolas;font-size:11pt;')
-            split.addWidget(view)
+            pane_layout.addWidget(view)
+            split.addWidget(pane)
         layout.addWidget(split, 1)
         self.groups = QListWidget()
         self.groups.setMaximumHeight(140)
         layout.addWidget(self.groups)
         self.apply = QPushButton('Seçili değişiklik grubunu hazırla')
         self.apply.setIcon(icon('git'))
-        layout.addWidget(self.apply)
+        footer = QHBoxLayout()
+        footer.addStretch()
+        footer.addWidget(self.apply)
+        close = QPushButton('Kapat')
+        close.clicked.connect(self.reject)
+        footer.addWidget(close)
+        layout.addLayout(footer)
         self.mode.currentIndexChanged.connect(self.load)
         self.groups.currentRowChanged.connect(self.highlight)
         self.apply.clicked.connect(self.apply_group)
@@ -43,6 +62,9 @@ class GitCompare(QDialog):
         self.load()
 
     def load(self, *_):
+        staged = self.mode.currentIndex() == 1
+        self.side_labels[0].setText('Son commit (HEAD)' if staged else 'Git dizini')
+        self.side_labels[1].setText('Git dizini' if staged else 'Çalışma dosyası')
         self.generation += 1
         generation = self.generation
         self.apply.setEnabled(False)

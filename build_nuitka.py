@@ -70,7 +70,7 @@ def write_windows_icon(target):
 def stage_support(bundle):
     support = bundle / "support"
     support.mkdir()
-    for name in ("python_tool.py", "pytest_host.py"):
+    for name in ("python_tool.py", "pytest_host.py", "import_index.py"):
         shutil.copyfile(PROJECT_ROOT / "atelier" / "workers" / name, support / name)
     for name in TOOL_DISTRIBUTIONS:
         package = distribution(name)

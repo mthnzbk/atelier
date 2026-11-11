@@ -18,6 +18,8 @@ Durum çubuğundaki **UTF-8 · LF** gibi görünen düğmeden dosyanın kodlamas
 
 **Görünüm → Proje notlarını göster** alt panelde kod yorumlarındaki `TODO` ve `FIXME` notlarını listeler. Dosya adı, not metni veya türle filtreleyin. Bir satırı seçerek ilgili konuma gidin. Panel açık dosyalardaki düzenlemeleri de izler. Diskte dışarıdan yapılan değişiklikleri yeniden taramak için **Yenile**'yi kullanın.
 
+Python tamamlamasında `Path · pathlib` gibi modül adıyla görünen öneriler gerekli importu da ekler. **Ctrl+Z**, tamamlamayı ve importu birlikte geri alır. Proje ve Python ortamındaki kaynaklardan gelen öneriler arka plandaki tarama tamamlandığında görünür.
+
 JSON, YAML, HTML, CSS, JavaScript ve TOML dosyaları otomatik renklendirilir. HTML'de `<di` yazıp öneriyi seçerek etiket ekleyin veya Ctrl+Space ile önerileri açın. `html5`, `a`, `img`, `link`, `form`, `input`, `table` ve `script` kısaltmaları Tab ile genişler. Tab sonraki düzenlenebilir alana geçer.
 
 HTML, CSS, JavaScript, JSON, YAML ve TOML dosyalarında bir girinti düzeyi iki boşluktur. JSON, YAML ve TOML hataları yazarken editörde ve **Sorunlar** panelinde görünür. YAML doğrulaması için uygulamayı çalıştırdığınız Python ortamına `requirements.txt` bağımlılıklarını kurun.
