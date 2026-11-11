@@ -90,6 +90,8 @@ class DebuggingFeatures:
         self.debugger.start(path, python, cwd, points, args, environment)
 
     def debug_state(self, state):
+        for action in self.debug_toolbar_actions:
+            action.setVisible(self.debugger.active)
         self.statusBar().showMessage('Debugger · ' + state, 5000)
         if state != 'Duraklatıldı':
             self.refresh_watches()

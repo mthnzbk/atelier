@@ -102,8 +102,11 @@ class SessionFeatures:
                       'editor_split': base64.b64encode(bytes(doc.splitter.saveState())).decode('ascii'),
                       'content_split': base64.b64encode(bytes(doc.content_split.saveState())).decode('ascii'),
                       'markdown_mode': doc.markdown_mode.currentIndex()}
+            record['encoding'] = doc.text_format.encoding
             if (not clean and dirty) or (doc.path is None and not (clean and dirty)):
                 record.update(text=doc.editor.toPlainText(), dirty=dirty)
+                if not doc.text_format.mixed:
+                    record['newline'] = doc.text_format.newline
                 tracked = self.file_monitor.entries.get(doc)
                 if tracked and tracked[1] and not doc.external_pending:
                     record['disk_digest'] = tracked[1].hex()
@@ -119,6 +122,9 @@ class SessionFeatures:
             return False
 
     def restore_session(self, startup=True):
+        from dataclasses import replace
+        from atelier.storage.text_format import NEWLINES, TextFormat
+
         if startup and not self.restore_enabled:
             return
         snapshot = self.session_store.load()
@@ -128,14 +134,17 @@ class SessionFeatures:
         for record in snapshot.get('documents', []):
             path = Path(record['path']) if record.get('path') else None
             if path and path.exists():
-                doc = self.open_path(path)
+                doc = self.open_path(path, encoding=record.get('encoding'))
             elif 'text' in record:
-                doc = self.add_document(Document(self, path, record['text']))
+                doc = self.add_document(Document(self, path, record['text'],
+                                                 TextFormat(record.get('encoding') or 'utf-8')))
             else:
                 continue
             if doc is None:
                 continue
             if 'text' in record:
+                if record.get('newline') in NEWLINES.values():
+                    doc.text_format = replace(doc.text_format, newline=record['newline'], mixed=())
                 doc.editor.setPlainText(record['text'])
                 doc.editor.document().setModified(record.get('dirty', True))
                 tracked = self.file_monitor.entries.get(doc)

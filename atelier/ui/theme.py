@@ -1,10 +1,10 @@
 from atelier.runtime.paths import asset_path
 
 PALETTES = {
-    'Gece': dict(bg='#10141d', panel='#171d29', editor='#111722', border='#283347',
-                 text='#dce5f5', muted='#8393ae', accent='#7c9cff', selection='#2b4167'),
-    'Açık': dict(bg='#edf1f8', panel='#f8faff', editor='#ffffff', border='#d5deec',
-                 text='#243047', muted='#64748b', accent='#4969d9', selection='#cbdcfb'),
+    'Gece': dict(bg='#101319', panel='#191d25', editor='#13171e', border='#303743',
+                 text='#e0e7f1', muted='#a3aec0', accent='#91aaff', selection='#293e63'),
+    'Açık': dict(bg='#eef1f6', panel='#f7f9fc', editor='#ffffff', border='#d6dde9',
+                 text='#202a3a', muted='#52617a', accent='#3d57bc', selection='#dce6ff'),
 }
 
 
@@ -20,7 +20,9 @@ def stylesheet(name):
     QMenuBar::item {{ padding: 7px 12px; }}
     QMenuBar::item:selected, QMenu::item:selected {{ background: {selection}; }}
     QMenu::item {{ padding: 7px 28px; }}
-    QToolBar {{ border: 0; border-bottom: 1px solid {border}; spacing: 5px; padding: 8px; }}
+    QToolBar {{ border: 0; border-bottom: 1px solid {border}; spacing: 4px; padding: 5px 8px; }}
+    QToolBar QToolButton {{ border-color:transparent; padding:5px 8px; }}
+    QToolBar QToolButton:hover {{ border-color:{border}; background:{selection}; }}
     QToolButton, QPushButton {{ background: {panel}; border: 1px solid {border}; border-radius: 6px; padding: 7px 11px; }}
     QToolButton:hover, QPushButton:hover {{ border-color: {accent}; background: {selection}; }}
     QToolButton:checked, QPushButton:checked {{ background: {selection}; color: {accent}; }}
@@ -57,7 +59,7 @@ def stylesheet(name):
     QToolButton:focus, QPushButton:focus {{ border-color:{accent}; }}
     QTabWidget::pane {{ border: 0; }}
     QTabBar {{ background: {bg}; }}
-    QTabBar::tab {{ background: {bg}; color: {muted}; padding: 11px 15px; border-bottom: 2px solid transparent; }}
+    QTabBar::tab {{ background: {bg}; color: {muted}; padding: 7px 12px; border-bottom: 2px solid transparent; }}
     QTabBar::tab:selected {{ background: {editor}; color: {text}; border-bottom: 2px solid {accent}; }}
     QTabBar::tab:hover {{ background: {panel}; }}
     QTreeView, QListWidget, QTreeWidget {{ background: {panel}; border: 0; outline: 0; alternate-background-color: {bg}; }}
@@ -73,6 +75,9 @@ def stylesheet(name):
     QSplitter::handle {{ background: {border}; width: 1px; height: 1px; }}
     QStatusBar {{ background: {panel}; border-top: 1px solid {border}; color: {muted}; }}
     QStatusBar::item {{ border: 0; }}
+    QStatusBar QLabel {{ background:transparent; color:{muted}; padding:1px 7px; }}
+    QStatusBar QPushButton, QStatusBar QToolButton {{ background:transparent; border:1px solid transparent; padding:3px 7px; }}
+    QStatusBar QPushButton:hover, QStatusBar QToolButton:hover {{ background:{selection}; border-color:{border}; }}
     QScrollBar:vertical {{ width: 11px; background: {editor}; }}
     QScrollBar:horizontal {{ height: 11px; background: {editor}; }}
     QScrollBar::handle {{ background: {border}; border-radius: 4px; min-height: 25px; min-width: 25px; }}
@@ -81,7 +86,6 @@ def stylesheet(name):
     QAbstractScrollArea::corner {{ background:{panel}; border:0; }}
     QLineEdit:disabled, QComboBox:disabled, QAbstractSpinBox:disabled {{ color:{muted}; background:{panel}; }}
     QToolTip {{ background: {panel}; color: {text}; border: 1px solid {border}; padding: 8px; }}
-    QLabel#brand {{ color: {accent}; font-size: 18px; font-weight: 700; padding: 12px; }}
-    QLabel#eyebrow {{ color: {muted}; font-size: 11px; padding: 8px 12px; }}
-    QLabel#breadcrumb {{ background: {editor}; color: {muted}; padding: 8px 14px; border-bottom: 1px solid {border}; }}
+    QLabel#eyebrow {{ background:{panel}; color:{text}; font-weight:600; padding:8px 12px; border-bottom:1px solid {border}; }}
+    QLabel#breadcrumb {{ background:{editor}; color:{muted}; padding:3px 12px; border-bottom:1px solid {border}; }}
     '''.format(**p)

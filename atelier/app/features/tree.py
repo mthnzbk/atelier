@@ -203,7 +203,7 @@ class TreeFeatures:
                     self.lsp.notify('textDocument/didClose', {'textDocument': {'uri': doc.uri}})
                 self.file_monitor.untrack(doc)
                 doc.path, doc.uri, doc.synced = target, target.as_uri(), None
-                doc.breadcrumb.setText(str(target))
+                doc.update_breadcrumb()
                 doc.update_language()
                 self.open_document(doc)
                 self.file_monitor.track(doc)

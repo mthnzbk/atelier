@@ -1,19 +1,21 @@
 """Shared document state and editor views."""
 import uuid
 from pathlib import Path
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QColor, QTextCursor, QTextCharFormat
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QLabel, QComboBox, QTextEdit
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QLabel, QComboBox, QTextEdit, QSizePolicy
 from atelier.editor.widget import Editor
 from atelier.ui.markdown import MarkdownPreview
 from atelier.languages.validation import LANGUAGES as VALIDATED_LANGUAGES
+from atelier.storage.text_format import TextFormat
 
 
 class Document(QWidget):
-    def __init__(self, window, path=None, text=''):
+    def __init__(self, window, path=None, text='', text_format=None):
         super().__init__()
         self.window = window
         self.path = Path(path).resolve() if path else None
+        self.text_format = text_format or TextFormat()
         self.large_file = len(text) > 1_000_000 or text.count(
             '\n') >= 20000 or any(len(line) > 20000 for line in text.split('\n'))
         self.save_worker = None
@@ -33,7 +35,9 @@ class Document(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.breadcrumb = QLabel()
         self.breadcrumb.setObjectName('breadcrumb')
-        self.breadcrumb.setFixedHeight(34)
+        self.breadcrumb.setTextFormat(Qt.TextFormat.PlainText)
+        self.breadcrumb.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.breadcrumb.setFixedHeight(27)
         layout.addWidget(self.breadcrumb)
         self.external_bar = QWidget()
         external_layout = QHBoxLayout(self.external_bar)
@@ -82,8 +86,17 @@ class Document(QWidget):
         editor.document().contentsChange.connect(self.changed)
         editor.document().modificationChanged.connect(lambda _: window.refresh_tabs())
         self.loading = False
-        self.breadcrumb.setText(str(self.path or 'Adsız Python dosyası'))
+        self.update_breadcrumb()
         self.update_language()
+
+    def update_breadcrumb(self):
+        path = self.path
+        if path and path.is_relative_to(self.window.root):
+            text = '  /  '.join(path.relative_to(self.window.root).parts)
+        else:
+            text = str(path or 'Adsız Python dosyası')
+        self.breadcrumb.setText(text)
+        self.breadcrumb.setToolTip(str(path or ''))
 
     def update_language(self):
         from atelier.editor.highlighting import FILE_LANGUAGES

@@ -14,6 +14,8 @@ Durum çubuğundaki **Python** düğmesi veya **Çalıştır → Python durumu�
 
 `Ctrl+Tab` sekme çubuğunda sağdaki, `Ctrl+Shift+Tab` soldaki editör sekmesine geçer. Son sekmeden sonra ilk sekmeye dönülür. `Ctrl+Shift+T` kapatılan dosya sekmesini diskteki içeriğiyle ve önceki imleç konumuyla açar.
 
+Durum çubuğundaki **UTF-8 · LF** gibi görünen düğmeden dosyanın kodlamasını ve satır sonunu yönetebilirsiniz. **Kodlamayla yeniden aç** diskteki içeriği seçtiğiniz kodlamayla okur. **Kodlamayla kaydet** içeriği seçilen kodlamaya dönüştürür. **Satır sonu** seçimi bir sonraki kayıtta uygulanır. İlk açılışta farklı kodlama gerekiyorsa **Dosya → Kodlamayla dosya aç…** komutunu kullanın. Normal kayıt mevcut kodlamayı, BOM'u ve satır sonlarını korur.
+
 JSON, YAML, HTML, CSS, JavaScript ve TOML dosyaları otomatik renklendirilir. HTML'de `<di` yazıp öneriyi seçerek etiket ekleyin veya Ctrl+Space ile önerileri açın. `html5`, `a`, `img`, `link`, `form`, `input`, `table` ve `script` kısaltmaları Tab ile genişler. Tab sonraki düzenlenebilir alana geçer.
 
 HTML, CSS, JavaScript, JSON, YAML ve TOML dosyalarında bir girinti düzeyi iki boşluktur. JSON, YAML ve TOML hataları yazarken editörde ve **Sorunlar** panelinde görünür. YAML doğrulaması için uygulamayı çalıştırdığınız Python ortamına `requirements.txt` bağımlılıklarını kurun.

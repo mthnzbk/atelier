@@ -1,16 +1,16 @@
 """Main-window files actions."""
-import io
 import os
 import time
-import tokenize
 import uuid
 import difflib
 from pathlib import Path
-from PySide6.QtWidgets import QFileDialog, QMessageBox
+from dataclasses import replace
+from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 from atelier.projects.settings import SAVE_ACTIONS
 from atelier.languages.formatting import LANGUAGES as WEB_FORMAT_LANGUAGES
 from atelier.runtime.tasks import TaskWorker
 from atelier.storage.history import HistoryDialog
+from atelier.storage.text_format import ENCODINGS, NEWLINES, encode_text_file, read_text_file
 from atelier.editor.document import Document
 
 
@@ -76,10 +76,10 @@ class FilesFeatures:
 
     def reopen_closed_tab(self):
         while self.closed_tabs:
-            path, index, position, scroll = self.closed_tabs.pop()
+            path, index, position, scroll, encoding = self.closed_tabs.pop()
             if not path.is_file() or any(doc.path == path for doc in self.documents):
                 continue
-            doc = self.open_path(path)
+            doc = self.open_path(path, encoding=encoding)
             if doc:
                 bar = self.tabs.tabBar()
                 bar.moveTab(self.tabs.indexOf(doc), min(index, self.tabs.count() - 1))
@@ -98,7 +98,38 @@ class FilesFeatures:
         for name in names:
             self.open_path(name)
 
-    def open_path(self, path):
+    def select_encoding(self, title):
+        label, accepted = QInputDialog.getItem(self, title, 'Kodlama', list(ENCODINGS), editable=False)
+        return ENCODINGS[label] if accepted else None
+
+    def open_with_encoding(self):
+        path, _ = QFileDialog.getOpenFileName(self, 'Kodlamayla dosya aç', str(self.root))
+        if path and (encoding := self.select_encoding('Dosya kodlaması')):
+            doc = next((doc for doc in self.documents if doc.path == Path(path).resolve()), None)
+            if doc:
+                self.tabs.setCurrentWidget(doc)
+                self.reload_document(doc, encoding=encoding)
+            else:
+                self.open_path(path, encoding=encoding)
+
+    def reload_with_encoding(self):
+        doc = self.current
+        if doc and doc.path and (encoding := self.select_encoding('Kodlamayla yeniden aç')):
+            self.reload_document(doc, encoding=encoding)
+
+    def save_with_encoding(self):
+        doc = self.current
+        if doc and (encoding := self.select_encoding('Kodlamayla kaydet')):
+            self.save(doc=doc, allow_format=False, encoding=encoding)
+
+    def set_document_newline(self, label):
+        doc = self.current
+        if doc and (doc.text_format.newline != NEWLINES[label] or doc.text_format.mixed):
+            doc.text_format = replace(doc.text_format, newline=NEWLINES[label], mixed=())
+            doc.editor.document().setModified(True)
+            self.update_position()
+
+    def open_path(self, path, *, encoding=None):
         path = Path(path).resolve()
         existing = next((doc for doc in self.documents if doc.path == path), None)
         if existing:
@@ -107,20 +138,13 @@ class FilesFeatures:
         if not path.is_file():
             return None
         try:
-            if path.stat().st_size > 25_000_000:
-                self.message('25 MB üzerindeki dosyalar açılamıyor.')
-                return None
-            if path.suffix.lower() in ('.py', '.pyw'):
-                with tokenize.open(path) as source:
-                    text = source.read()
-            else:
-                text = path.read_text(encoding='utf-8')
-        except (OSError, UnicodeError, SyntaxError) as error:
+            text, text_format = read_text_file(path, encoding)
+        except (OSError, ValueError, LookupError, SyntaxError) as error:
             self.message(str(error))
             return None
-        return self.add_document(Document(self, path, text))
+        return self.add_document(Document(self, path, text, text_format))
 
-    def save(self, save_as=False, doc=None, allow_format=True):
+    def save(self, save_as=False, doc=None, allow_format=True, *, encoding=None):
         doc = doc or self.current
         if not doc:
             return False
@@ -135,7 +159,7 @@ class FilesFeatures:
             self.message('Bu dosya başka bir sekmede açık.')
             return False
         self.cancel_save(doc)
-        if not self.write_document(doc, target):
+        if not self.write_document(doc, target, encoding=encoding):
             return False
         if allow_format and not doc.large_file:
             self.run_save_actions(doc, target)
@@ -217,7 +241,7 @@ class FilesFeatures:
         worker.finished.connect(self.pump_save_actions)
         worker.start()
 
-    def write_document(self, doc, target):
+    def write_document(self, doc, target, *, encoding=None):
         if doc not in self.documents:
             return False
         try:
@@ -231,14 +255,13 @@ class FilesFeatures:
             text = doc.editor.toPlainText()
             if target.exists() and not doc.large_file:
                 try:
-                    with (tokenize.open(target) if target.suffix.lower() in ('.py', '.pyw') else target.open(encoding='utf-8')) as old:
-                        self.file_history.snapshot(target, old.read())
-                except (OSError, UnicodeError, SyntaxError) as error:
+                    old, _ = read_text_file(target, doc.text_format.encoding if doc.path == target else None)
+                    self.file_history.snapshot(target, old)
+                except (OSError, ValueError, LookupError, SyntaxError) as error:
                     self.statusBar().showMessage('Önceki sürüm geçmişe yazılamadı: ' + str(error), 5000)
-            encoding = 'utf-8'
-            if target.suffix in ('.py', '.pyw'):
-                encoding, _ = tokenize.detect_encoding(io.BytesIO(text.encode('utf-8')).readline)
-            payload = text.encode(encoding)
+            text_format = replace(doc.text_format, encoding=encoding) if encoding else doc.text_format
+            payload, text, text_format = encode_text_file(
+                target, text, doc.saved_text if doc.path else '', text_format, converting=bool(encoding))
             # Replace atomically so interrupted writes do not truncate existing files.
             temporary = target.with_name(target.name + '.' + uuid.uuid4().hex + '.tmp')
             try:
@@ -260,7 +283,7 @@ class FilesFeatures:
             finally:
                 if temporary.exists():
                     temporary.unlink()
-        except (OSError, UnicodeError, SyntaxError) as error:
+        except (OSError, ValueError, LookupError, SyntaxError) as error:
             self.message(str(error))
             return False
         if doc.path != target:
@@ -271,7 +294,10 @@ class FilesFeatures:
             doc.synced = None
             doc.update_language()
             self.open_document(doc)
-            doc.breadcrumb.setText(str(target))
+            doc.update_breadcrumb()
+        if text != doc.editor.toPlainText():
+            self.replace_document_text(doc, text)
+        doc.text_format = text_format
         self.sync_document(doc)
         if self.lsp.initialized and doc.synced is not None:
             self.lsp.notify('textDocument/didSave', {'textDocument': {'uri': doc.uri}})
@@ -286,6 +312,7 @@ class FilesFeatures:
         doc.external_bar.hide()
         self.file_monitor.track(doc)
         self.refresh_tabs()
+        self.update_position()
         if doc is self.current or target == self.root / 'atelier.toml':
             self.profile_selector.refresh()
         self.git_refresh_timer.start()
@@ -314,7 +341,7 @@ class FilesFeatures:
         if doc.path and doc.path.is_file():
             self.closed_tabs = [entry for entry in self.closed_tabs if entry[0] != doc.path]
             self.closed_tabs.append((doc.path, index, doc.editor.textCursor().position(),
-                                     doc.editor.verticalScrollBar().value()))
+                                     doc.editor.verticalScrollBar().value(), doc.text_format.encoding))
             del self.closed_tabs[:-25]
         if doc.path and doc.breakpoints:
             self.closed_breakpoints[str(doc.path)] = {
@@ -357,7 +384,7 @@ class FilesFeatures:
         doc.external_bar.show()
         self.refresh_tabs()
 
-    def reload_document(self, doc, confirm=True):
+    def reload_document(self, doc, confirm=True, *, encoding=None):
         if not doc.path or not doc.path.exists():
             self.message('Dosya diskte bulunamadı. Yerel içeriği kaydedebilirsiniz.')
             return False
@@ -368,12 +395,8 @@ class FilesFeatures:
             if answer != QMessageBox.StandardButton.Yes:
                 return False
         try:
-            if doc.path.suffix.lower() in ('.py', '.pyw'):
-                with tokenize.open(doc.path) as source:
-                    text = source.read()
-            else:
-                text = doc.path.read_text(encoding='utf-8')
-        except (OSError, UnicodeError, SyntaxError) as error:
+            text, text_format = read_text_file(doc.path, encoding or doc.text_format.encoding)
+        except (OSError, ValueError, LookupError, SyntaxError) as error:
             self.message(str(error))
             return False
         position = doc.editor.textCursor().position()
@@ -384,21 +407,19 @@ class FilesFeatures:
         doc.editor.setTextCursor(cursor)
         doc.editor.document().setModified(False)
         doc.saved_text = text
+        doc.text_format = text_format
         doc.external_pending = False
         doc.external_bar.hide()
         self.file_monitor.track(doc)
         self.sync_document(doc)
         self.refresh_tabs()
+        self.update_position()
         return True
 
     def compare_external(self, doc):
         try:
-            if doc.path.suffix.lower() in ('.py', '.pyw'):
-                with tokenize.open(doc.path) as source:
-                    disk = source.read()
-            else:
-                disk = doc.path.read_text(encoding='utf-8')
-        except (OSError, UnicodeError, SyntaxError) as error:
+            disk, _ = read_text_file(doc.path, doc.text_format.encoding)
+        except (OSError, ValueError, LookupError, SyntaxError) as error:
             self.message(str(error))
             return
         difference = ''.join(difflib.unified_diff(doc.editor.toPlainText().splitlines(keepends=True),

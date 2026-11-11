@@ -38,7 +38,8 @@ class ProjectsFeatures:
             self.set_project_trust(False)
 
     def update_trust_ui(self):
-        self.trust_button.setText('Proje güveni · ' + ('Güvenilir' if self.project_trusted else 'Kısıtlı'))
+        self.trust_button.setText('Güvenilir' if self.project_trusted else 'Kısıtlı')
+        self.trust_button.setToolTip('Proje güveni')
         self.terminal_tabs.show_project()
 
     def stop_project_processes(self):
@@ -137,7 +138,8 @@ class ProjectsFeatures:
         self.project_loaded = True
         self.fs.setRootPath(str(self.root))
         self.tree.setRootIndex(self.fs.index(str(self.root)))
-        self.project_label.setText('PROJE  /  ' + self.root.name.upper())
+        self.project_label.setText(self.root.name or str(self.root))
+        self.project_label.setToolTip(str(self.root))
         self.settings.setValue('project', str(self.root))
         self.recent_projects.touch(root)
         self.update_trust_ui()

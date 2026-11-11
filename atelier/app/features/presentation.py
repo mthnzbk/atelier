@@ -1,9 +1,9 @@
 """Main-window presentation actions."""
 import json
 from pathlib import Path
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QAction, QColor, QFont, QPalette
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTabWidget, QTreeView, QTreeWidget, QPlainTextEdit, QLineEdit, QPushButton, QLabel, QToolBar, QListWidget, QCheckBox, QDialog, QDialogButtonBox, QAbstractItemView
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTabWidget, QTreeView, QTreeWidget, QPlainTextEdit, QLineEdit, QPushButton, QLabel, QToolBar, QToolButton, QMenu, QListWidget, QCheckBox, QDialog, QDialogButtonBox, QAbstractItemView
 from atelier.ui.theme import stylesheet, PALETTES
 from atelier.projects.tree_model import ProjectModel
 from atelier.ui.palette import CommandPalette
@@ -36,11 +36,20 @@ class PresentationFeatures:
         self.python_label.setFlat(True)
         self.python_label.clicked.connect(self.show_python_status)
         self.trust_button = QPushButton()
+        self.trust_button.setAccessibleName('Proje güveni')
         self.trust_button.setFlat(True)
         self.trust_button.clicked.connect(self.show_project_trust)
+        self.format_button = QToolButton()
+        self.format_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self.format_button.setAccessibleName('Dosya kodlaması ve satır sonu')
+        self.format_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        format_menu = QMenu(self.format_button)
+        format_menu.aboutToShow.connect(self.populate_file_format_menu)
+        self.format_button.setMenu(format_menu)
         self.statusBar().addWidget(self.lsp_label)
         self.statusBar().addPermanentWidget(self.python_label)
         self.statusBar().addPermanentWidget(self.trust_button)
+        self.statusBar().addPermanentWidget(self.format_button)
         self.statusBar().addPermanentWidget(self.position_label)
 
     def build_sidebar(self):
@@ -54,15 +63,6 @@ class PresentationFeatures:
         explorer = QWidget()
         box = QVBoxLayout(explorer)
         box.setContentsMargins(0, 0, 0, 0)
-        brand = QLabel('ATELIER')
-        brand.setObjectName('brand')
-        brand_row = QHBoxLayout()
-        brand_row.setContentsMargins(12, 0, 0, 0)
-        logo_label = QLabel()
-        logo_label.setPixmap(self.windowIcon().pixmap(32, 32))
-        brand_row.addWidget(logo_label)
-        brand_row.addWidget(brand, 1)
-        box.addLayout(brand_row)
         self.project_label = QLabel()
         self.project_label.setObjectName('eyebrow')
         box.addWidget(self.project_label)
@@ -161,6 +161,7 @@ class PresentationFeatures:
         self.find_bar.hide()
         eb.addWidget(self.find_bar)
         self.tabs = QTabWidget()
+        self.tabs.setObjectName('editorTabs')
         self.tabs.setTabsClosable(True)
         self.tabs.setMovable(True)
         self.tabs.tabCloseRequested.connect(self.close_tab)
@@ -276,6 +277,7 @@ class PresentationFeatures:
             return a
         action('new', 'Yeni dosya', 'Ctrl+N', self.new, 'Dosya')
         action('open', 'Dosya aç…', 'Ctrl+O', self.open, 'Dosya')
+        action('open_encoding', 'Kodlamayla dosya aç…', '', self.open_with_encoding, 'Dosya')
         action('quick_open', 'Hızlı dosya aç…', 'Ctrl+P', self.quick_open, 'Dosya')
         action('recent_projects', 'Son projeler…', 'Ctrl+Alt+P', self.show_recent_projects, 'Dosya')
         action('python_status', 'Python durumu…', '', self.show_python_status, 'Çalıştır')
@@ -428,13 +430,14 @@ class PresentationFeatures:
         toolbar = QToolBar('Araçlar')
         toolbar.setObjectName('mainToolbar')
         toolbar.setMovable(False)
+        toolbar.setIconSize(QSize(17, 17))
         toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.addToolBar(toolbar)
         short_names = {'project': 'Proje', 'open': 'Aç', 'save': 'Kaydet', 'split': 'Böl',
-                       'python': 'Python ortamı', 'run': 'Çalıştır', 'debug': 'Debug',
+                       'run': 'Çalıştır', 'debug': 'Debug',
                        'continue': 'Devam', 'next': 'Adım', 'stop': 'Durdur'}
 
-        def toolbar_action(key):
+        def toolbar_action(key, compact=False):
             original = self.actions[key]
             item = QAction(short_names[key], self)
             item.setIcon(original.icon())
@@ -446,18 +449,25 @@ class PresentationFeatures:
                 original=original: item.setIcon(
                     original.icon()))
             toolbar.addAction(item)
+            if compact:
+                toolbar.widgetForAction(item).setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+            return item
         for key in ['project', 'open', 'save', 'split']:
-            toolbar_action(key)
+            toolbar_action(key, compact=True)
         spacer = QWidget()
+        spacer.setStyleSheet('background: transparent;')
         from PySide6.QtWidgets import QSizePolicy
         spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         toolbar.addWidget(spacer)
         from atelier.ui.profile_selector import ProfileSelector
         self.profile_selector = ProfileSelector(self)
-        for key in ['python', 'run', 'debug', 'continue', 'next', 'stop']:
-            if key == 'run':
-                toolbar.addWidget(self.profile_selector)
-            toolbar_action(key)
+        toolbar.addWidget(self.profile_selector)
+        toolbar_action('run')
+        toolbar_action('debug')
+        self.debug_toolbar_actions = [toolbar_action(key, compact=True) for key in ('continue', 'next')]
+        for item in self.debug_toolbar_actions:
+            item.setVisible(False)
+        toolbar_action('stop', compact=True)
         try:
             mapping = json.loads(self.settings.value('shortcuts', '{}'))
             if 'reopen_tab' not in mapping and mapping.get('tests') == 'Ctrl+Shift+T':
@@ -524,6 +534,12 @@ class PresentationFeatures:
         SettingsDialog(self).exec()
 
     def update_position(self):
+        self.format_button.setEnabled(self.current is not None)
+        if self.current:
+            text_format = self.current.text_format
+            self.format_button.setText(f'{text_format.encoding_label} · {text_format.newline_label}')
+        else:
+            self.format_button.setText('—')
         if self.editor:
             cursor = self.editor.textCursor()
             kind = self.current.language
@@ -531,11 +547,25 @@ class PresentationFeatures:
                         'markdown': 'Markdown'}.get(kind, kind.upper())
             mode = ' · Büyük dosya modu' if self.current.large_file else ''
             self.position_label.setText(
-                f'Satır {
-                    cursor.blockNumber() +
-                    1}, Sütun {
-                    cursor.positionInBlock() +
-                    1}    {language}{mode}')
+                f'{language}{mode}  ·  {cursor.blockNumber() + 1}:{cursor.positionInBlock() + 1}')
+
+    def populate_file_format_menu(self):
+        from atelier.storage.text_format import NEWLINES
+
+        menu = self.format_button.menu()
+        menu.clear()
+        doc = self.current
+        if not doc:
+            return
+        reopen = menu.addAction('Kodlamayla yeniden aç…', self.reload_with_encoding)
+        reopen.setEnabled(doc.path is not None)
+        menu.addAction('Kodlamayla kaydet…', self.save_with_encoding)
+        endings = menu.addMenu('Satır sonu')
+        for name in NEWLINES:
+            action = endings.addAction(name)
+            action.setCheckable(True)
+            action.setChecked(name == doc.text_format.newline_label)
+            action.triggered.connect(lambda checked=False, label=name: self.set_document_newline(label))
 
     def show_text(self, title, text):
         dialog = QDialog(self)

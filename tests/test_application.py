@@ -867,6 +867,51 @@ class StudioIntegration(unittest.TestCase):
         self.wait(lambda: terminal.prompt_idle and 'ATELIER-BUSY-DONE' in ''.join(output))
         self.assertEqual(second_pid, terminal.process.processId())
 
+    def test_file_format_preserves_and_converts_encoding_and_endings(self):
+        window = self.window
+        path = self.root / 'turkish.txt'
+        original = 'Türkçe şığ\r\nİkinci\r\n'
+        path.write_bytes(original.encode('cp1254'))
+        doc = window.open_path(path, encoding='cp1254')
+        self.assertEqual('Windows-1254 · CRLF', window.format_button.text())
+        doc.editor.setPlainText('Türkçe şığ\nDeğişti\n')
+        self.assertTrue(window.save(doc=doc, allow_format=False))
+        self.assertEqual('Türkçe şığ\r\nDeğişti\r\n'.encode('cp1254'), path.read_bytes())
+        window.close_tab(window.tabs.indexOf(doc))
+        window.reopen_closed_tab()
+        doc = window.current
+        self.assertEqual(path, doc.path)
+        self.assertEqual('Windows-1254 · CRLF', window.format_button.text())
+        window.set_document_newline('LF')
+        self.assertTrue(doc.editor.document().isModified())
+        self.assertTrue(window.save(doc=doc, allow_format=False, encoding='utf-8'))
+        self.assertEqual('Türkçe şığ\nDeğişti\n'.encode(), path.read_bytes())
+        self.assertEqual('UTF-8 · LF', window.format_button.text())
+        doc.editor.setPlainText('Türkçe 😀\n')
+        self.assertFalse(window.save(doc=doc, allow_format=False, encoding='cp1254'))
+        self.assertEqual('Türkçe şığ\nDeğişti\n'.encode(), path.read_bytes())
+        self.assertEqual('UTF-8 · LF', window.format_button.text())
+
+        mixed = self.root / 'mixed.txt'
+        mixed.write_bytes(b'\xef\xbb\xbfline one\r\nline two\nline three\r')
+        doc = window.open_path(mixed)
+        self.assertEqual('UTF-8 BOM · Karışık', window.format_button.text())
+        doc.editor.setPlainText('line one\nchanged\nline three\n')
+        self.assertTrue(window.save(doc=doc, allow_format=False))
+        self.assertEqual(b'\xef\xbb\xbfline one\r\nchanged\nline three\r', mixed.read_bytes())
+
+        python = self.root / 'turkish.py'
+        python.write_bytes('# coding: cp1254\r\nword = "ışık"\r\n'.encode('cp1254'))
+        doc = window.open_path(python)
+        self.assertTrue(window.save(doc=doc, allow_format=False, encoding='utf-8'))
+        self.assertEqual('# coding: utf-8\r\nword = "ışık"\r\n'.encode(), python.read_bytes())
+        self.assertIn('# coding: utf-8', doc.editor.toPlainText())
+        legacy = self.root / 'legacy.py'
+        legacy.write_bytes('# coding: cp1254\rword = "ışık"\r'.encode('cp1254'))
+        doc = window.open_path(legacy)
+        self.assertEqual('Windows-1254 · CR', window.format_button.text())
+        self.assertIn('word = "ışık"\n', doc.editor.toPlainText())
+
     def test_visual_tab_order_and_reopen_shortcuts(self):
         w = self.window
         untitled = w.current

@@ -35,7 +35,7 @@ class LanguageFeatures:
         self.lsp.status.connect(self.lsp_status)
         self.lsp.diagnostics.connect(self.diagnostics)
         if not self.project_trusted:
-            self.python_label.setText('Python · Kısıtlı')
+            self.python_label.setText('Python')
             self.python_label.setToolTip('Proje güveni gerekli')
             self.lsp_label.setText('● LSP kısıtlı')
             self.python_status_changed.emit()

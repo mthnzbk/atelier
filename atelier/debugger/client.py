@@ -146,7 +146,7 @@ class Debugger(QObject):
             # An adapter may remain alive after its debuggee exits.
             self.send('disconnect', {'terminateDebuggee': False}, lambda _: self.process.kill())
             pid = self.process.processId()
-            QTimer.singleShot(1200, lambda: self.process.kill()
+            QTimer.singleShot(1200, self, lambda: self.process.kill()
                               if self.process.processId() == pid and pid else None)
         elif event == 'exited':
             self.output.emit(f"\n[Çıkış kodu: {body.get('exitCode')}]\n")
