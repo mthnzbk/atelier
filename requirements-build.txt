@@ -1,0 +1,3 @@
+-r requirements.txt
+Nuitka>=2.8,<5
+tomli>=2,<3

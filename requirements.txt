@@ -1,0 +1,20 @@
+PySide6-Essentials>=6.8,<7
+python-lsp-server[pyflakes,pycodestyle]>=1.15,<2
+Pygments>=2.18,<3
+debugpy>=1.8,<2
+autopep8>=2.3,<3
+Markdown>=3.7,<4
+pyte>=0.8.2,<1
+pywinpty>=2.0.14,<4; sys_platform == "win32"
+ptyprocess>=0.7,<1; sys_platform != "win32"
+pytest>=8,<10
+qtawesome>=1.4,<2
+Send2Trash>=1.8,<3
+rope>=1.14,<2
+coverage>=7.6,<8
+tomli>=2; python_version < "3.11"
+PyYAML>=6,<7
+djhtml>=3,<4
+jsbeautifier>=1.15,<2
+cssbeautifier>=1.15,<2
+tomlkit>=0.13,<1
