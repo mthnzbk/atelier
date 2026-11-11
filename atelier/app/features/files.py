@@ -56,6 +56,7 @@ class FilesFeatures:
             self.tabs.setTabToolTip(i, str(doc.path or 'Kaydedilmemiş belge'))
 
     def tab_changed(self, *_):
+        self.dismiss_definition_preview()
         self.profile_selector.refresh()
         for doc in self.documents:
             for editor in doc.editors:
@@ -324,6 +325,7 @@ class FilesFeatures:
             self.new()
 
     def remove_document(self, doc):
+        self.dismiss_definition_preview()
         self.cancel_save(doc)
         doc.timer.stop()
         doc.completion_timer.stop()

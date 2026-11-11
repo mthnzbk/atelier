@@ -121,6 +121,42 @@ class StudioIntegration(unittest.TestCase):
         self.assertEqual(editor.viewportMargins().left(), editor.gutter_width())
         self.assertFalse(editor.gutter.grab().isNull())
 
+    def test_peek_definition_opens_inline_and_navigates_on_request(self):
+        from PySide6.QtWidgets import QPushButton
+
+        window = self.window
+        target = self.root / 'preview_provider.py'
+        target.write_text('# Provider\ndef greet(name):\n    return name.upper()\n', encoding='utf-8')
+        source = self.file('preview_caller.py', 'from preview_provider import greet\nresult = greet("Ada")\n')
+        editor = source.editor
+        cursor = editor.textCursor()
+        cursor.setPosition(editor.document().findBlockByNumber(1).position() + len('result = gr'))
+        editor.setTextCursor(cursor)
+        count = window.tabs.count()
+
+        QTest.keyClick(editor, Qt.Key.Key_F12, Qt.KeyboardModifier.AltModifier)
+        self.wait(lambda: window.definition_preview is not None)
+        preview = window.definition_preview
+        self.assertIs(source, window.current)
+        self.assertEqual(count, window.tabs.count())
+        self.assertIs(editor.viewport(), preview.parentWidget())
+        self.assertTrue(preview.code.isReadOnly())
+        self.assertIn('def greet(name):', preview.code.toPlainText())
+        self.assertEqual(1, preview.code.textCursor().blockNumber())
+        QTest.keyClick(preview.code, Qt.Key.Key_Escape)
+        self.assertIsNone(window.definition_preview)
+        self.assertTrue(editor.hasFocus())
+        self.assertIs(source, window.current)
+
+        window.actions['peek_definition'].trigger()
+        self.wait(lambda: window.definition_preview is not None)
+        open_button = next(button for button in window.definition_preview.findChildren(QPushButton)
+                           if button.text() == 'Sekmede aç')
+        open_button.click()
+        self.assertIsNone(window.definition_preview)
+        self.assertEqual(target, window.current.path)
+        self.assertEqual(1, window.editor.textCursor().blockNumber())
+
     def test_lsp_navigation_rename_format_and_environment(self):
         w = self.window
         doc = self.file('example.py', 'def greet(name):\n    """Say hello."""\n    return name\n\nvalue=greet("Ada")\nprint(value)\n')

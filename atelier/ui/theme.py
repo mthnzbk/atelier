@@ -14,7 +14,7 @@ def stylesheet(name):
     return '''
     QWidget {{ background: {bg}; color: {text}; font-family: 'Segoe UI'; font-size: 12px; }}
     QMainWindow, QDialog {{ background: {bg}; }}
-    QFrame#signatureHelp {{ background:{panel}; border:1px solid {border}; border-radius:6px; }}
+    QFrame#signatureHelp, QFrame#definitionPreview {{ background:{panel}; border:1px solid {border}; border-radius:6px; }}
     QFrame#signatureHelp QLabel {{ background:transparent; border:0; }}
     QMenuBar, QMenu, QToolBar {{ background: {panel}; }}
     QMenuBar::item {{ padding: 7px 12px; }}

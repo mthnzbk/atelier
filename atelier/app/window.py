@@ -86,6 +86,8 @@ class Window(PresentationFeatures, LanguageFeatures, FilesFeatures, ProjectsFeat
         self.git_refresh_timer.timeout.connect(self.refresh_git)
         self.git_generation = 0
         self.closing = False
+        self.definition_preview = None
+        self.definition_preview_generation = 0
         self.update_worker = None
         self.pending_update = None
         self.run_args = ''
@@ -183,6 +185,7 @@ class Window(PresentationFeatures, LanguageFeatures, FilesFeatures, ProjectsFeat
         self.checkpoint(clean=True)
         self.save_layout()
         self.closing = True
+        self.dismiss_definition_preview()
         self.save_queue.clear()
         self.git_refresh_timer.stop()
         self.search_generation += 1

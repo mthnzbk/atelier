@@ -23,6 +23,7 @@ class NavigationFeatures:
         doc = self.current
         if not doc:
             return
+        self.dismiss_definition_preview()
         if len(doc.editors) == 1:
             doc.add_view()
             doc.splitter.setSizes([500, 500])

@@ -10,11 +10,12 @@ from atelier.languages.lsp import Lsp
 from atelier.languages.validation import LANGUAGES as VALIDATED_LANGUAGES
 from atelier.languages.formatting import LANGUAGES as WEB_FORMAT_LANGUAGES
 from atelier.runtime.tasks import TaskWorker
-from atelier.languages.locations import uri_path
+from atelier.languages.locations import definition_target, uri_path
 
 
 class LanguageFeatures:
     def start_lsp(self):
+        self.dismiss_definition_preview()
         self.profile_selector.refresh()
         if self.lsp:
             self.lsp.pending.clear()
@@ -296,17 +297,70 @@ class LanguageFeatures:
 
     def definition(self):
         def receive(result):
-            locations = result if isinstance(result, list) else [result] if result else []
-            if locations:
-                location = locations[0]
-                uri = location.get('uri', location.get('targetUri'))
-                region = location.get('range', location.get('targetSelectionRange'))
-                self.remember_location()
-                doc = self.open_path(uri_path(uri))
-                if doc:
-                    self.goto(doc, region['start'], record=False)
-                    self.remember_location()
+            if target := definition_target(result):
+                self.open_definition(*target)
         self.request_at('textDocument/definition', receive)
+
+    def definition_document(self, path):
+        uri = path.as_uri()
+        return next((doc for doc in self.documents if doc.path == path or doc.uri == uri), None)
+
+    def open_definition(self, path, position):
+        self.remember_location()
+        target = self.definition_document(path) or self.open_path(path)
+        if target:
+            self.goto(target, position, record=False)
+            self.remember_location()
+
+    def dismiss_definition_preview(self, restore_focus=False):
+        self.definition_preview_generation += 1
+        preview = self.definition_preview
+        self.definition_preview = None
+        if preview:
+            editor = preview.editor
+            preview.close()
+            if restore_focus and self.editor is editor:
+                editor.setFocus()
+
+    def peek_definition(self):
+        doc, editor = self.current, self.editor
+        if not doc or doc.language != 'python' or doc.large_file or not self.lsp.initialized:
+            self.statusBar().showMessage('Tanım önizlemesi için Python dil sunucusu hazır olmalı.', 4500)
+            return
+        self.dismiss_definition_preview()
+        generation = self.definition_preview_generation
+
+        def receive(result):
+            if self.definition_preview_generation != generation or self.current is not doc or self.editor is not editor:
+                return
+            target = definition_target(result)
+            if not target:
+                self.statusBar().showMessage('Tanım bulunamadı.', 3500)
+                return
+            from atelier.ui.definition_preview import DefinitionPreview, definition_excerpt
+            path, position = target
+            target_doc = self.definition_document(path)
+            try:
+                text, highlight_line = definition_excerpt(
+                    path, position['line'], target_doc.editor.toPlainText() if target_doc else None)
+            except (OSError, ValueError, SyntaxError) as error:
+                self.statusBar().showMessage(str(error), 4500)
+                return
+
+            def open_target():
+                self.dismiss_definition_preview()
+                self.open_definition(path, position)
+
+            preview = DefinitionPreview(
+                editor, path, position['line'], text, highlight_line, open_target,
+                lambda checked=False: self.dismiss_definition_preview(restore_focus=True))
+            self.definition_preview = preview
+            preview.reposition()
+            preview.show()
+            preview.raise_()
+            preview.code.setFocus()
+
+        self.request_at('textDocument/definition', receive, doc, editor)
 
     def rename_symbol(self):
         if not self.current or not self.lsp.initialized:

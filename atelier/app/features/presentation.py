@@ -332,6 +332,7 @@ class PresentationFeatures:
         action('search', 'Projede ara', 'Ctrl+Shift+F', self.show_project_search, 'Düzenle')
         action('complete', 'Kod tamamla', 'Ctrl+Space', self.complete, 'Kod')
         action('definition', 'Tanıma git', 'F12', self.definition, 'Kod')
+        action('peek_definition', 'Tanıma yerinde bak', 'Alt+F12', self.peek_definition, 'Kod')
         action('rename', 'Sembolü yeniden adlandır…', 'F2', self.rename_symbol, 'Kod')
         action('format', 'Kodu biçimlendir', 'Shift+Alt+F', self.format_document, 'Kod')
         action(

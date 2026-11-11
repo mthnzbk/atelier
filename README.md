@@ -179,6 +179,7 @@ Kurulumdan sonra Windows'ta baslat.bat dosyasına çift tıklayarak editörü a�
 | Bul / değiştir / projede ara | Ctrl+F / Ctrl+H / Ctrl+Shift+F |
 | Tamamlama | Ctrl+Space |
 | Tanıma git / yeniden adlandır | F12 / F2 |
+| Tanıma yerinde bak | Alt+F12 |
 | Biçimlendir | Shift+Alt+F |
 | Satır yorumunu aç/kapat | Ctrl+/ |
 | Editörü böl/birleştir | Ctrl+Backslash |
@@ -236,7 +237,7 @@ Git panelindeki **Depo başlat (git init)** düğmesi aynı işlemi proje klasö
 
 **Proje ayarları:** Dosya → Proje ayarları. Python yolu, çalıştırma argümanları ve `-k smoke --maxfail=1` gibi pytest seçenekleri proje klasörüne göre QSettings içinde ayrı tutulur. Proje değiştirince ilgili tercihler yüklenir; terminali yeni ortamla açmak için Yeni terminal kullanın.
 
-**Kod gezinmesi:** Shift+F12 sembolün kullanımlarını alt panelde listeler. Ctrl+Shift+M açık dosyanın sembollerini listeler; üst kutuyla filtreleyin ve bir sonuca tıklayın. F12 ile yapılan dosyalar arası atlamadan sonra Alt+Sol/Alt+Sağ konum geçmişinde gezinir.
+**Kod gezinmesi:** Alt+F12 Python sembolünün tanımını açık editörün içinde renkli bir önizleme olarak gösterir. Esc ile kapatın veya **Sekmede aç** ile tanım satırına geçin. Shift+F12 sembolün kullanımlarını alt panelde listeler. Ctrl+Shift+M açık dosyanın sembollerini listeler; üst kutuyla filtreleyin ve bir sonuca tıklayın. F12 ile yapılan dosyalar arası atlamadan sonra Alt+Sol/Alt+Sağ konum geçmişinde gezinir.
 
 **Dosya ağacı:** Dosya/klasöre sağ tıklayın. Silme geri dönüşüm kutusuna gider; kalıcı silme yedeği yoksa uygulanmaz. Açık ve değiştirilmiş dosyalar için önce kaydetme seçimi sunulur. Normal yeniden adlandırma yalnızca dosya/klasör adını değiştirir. Refactor seçeneği Python modül/paket adıyla birlikte Rope'un bulduğu import referanslarını günceller; önizlemeyi onaylamadan değişiklik yapılmaz. Dinamik importlar ve Python dışındaki metin referansları otomatik olarak bulunamayabilir. Proje kökü ve .git klasörü bu menüden silinemez; sembolik bağlantılar için refactor uygulanmaz.
 
