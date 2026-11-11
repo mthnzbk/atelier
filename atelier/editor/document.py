@@ -183,6 +183,7 @@ class Document(QWidget):
         if self.loading or (removed == 0 and added == 0):
             return
         self.edit_generation += 1
+        self.window.notes_panel.source_changed(self)
         if not self.large_file and (self.editor.document().characterCount() > 1_000_000 or self.editor.blockCount(
         ) > 20000 or self.editor.document().findBlock(position).length() > 20001):
             self.enter_large_mode()

@@ -160,9 +160,11 @@ def validate_document(job):
 
 
 def main():
+    from atelier.projects.notes import project_notes
+
     try:
         job = json.load(sys.stdin)
-        result = {'search': search, 'replace': replace, 'symbols': symbols,
+        result = {'search': search, 'replace': replace, 'symbols': symbols, 'notes': project_notes,
                   'save': save, 'validate': validate_document}[job['operation']](job)
         print(json.dumps(dict(result=result), ensure_ascii=True))
     except Exception as error:

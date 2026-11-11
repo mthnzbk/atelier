@@ -111,6 +111,7 @@ class ProjectsFeatures:
         if self.project_loaded:
             self.project_profiles.save(self.root, self.python_preference, self.run_args, self.test_args)
         self.root = root
+        self.notes_panel.set_project(root)
         trust = self.read_project_trust(root)
         self.project_trusted = trust is True
         if switching or not self.project_loaded:

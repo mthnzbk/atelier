@@ -16,6 +16,8 @@ Durum çubuğundaki **Python** düğmesi veya **Çalıştır → Python durumu�
 
 Durum çubuğundaki **UTF-8 · LF** gibi görünen düğmeden dosyanın kodlamasını ve satır sonunu yönetebilirsiniz. **Kodlamayla yeniden aç** diskteki içeriği seçtiğiniz kodlamayla okur. **Kodlamayla kaydet** içeriği seçilen kodlamaya dönüştürür. **Satır sonu** seçimi bir sonraki kayıtta uygulanır. İlk açılışta farklı kodlama gerekiyorsa **Dosya → Kodlamayla dosya aç…** komutunu kullanın. Normal kayıt mevcut kodlamayı, BOM'u ve satır sonlarını korur.
 
+**Görünüm → Proje notlarını göster** alt panelde kod yorumlarındaki `TODO` ve `FIXME` notlarını listeler. Dosya adı, not metni veya türle filtreleyin. Bir satırı seçerek ilgili konuma gidin. Panel açık dosyalardaki düzenlemeleri de izler. Diskte dışarıdan yapılan değişiklikleri yeniden taramak için **Yenile**'yi kullanın.
+
 JSON, YAML, HTML, CSS, JavaScript ve TOML dosyaları otomatik renklendirilir. HTML'de `<di` yazıp öneriyi seçerek etiket ekleyin veya Ctrl+Space ile önerileri açın. `html5`, `a`, `img`, `link`, `form`, `input`, `table` ve `script` kısaltmaları Tab ile genişler. Tab sonraki düzenlenebilir alana geçer.
 
 HTML, CSS, JavaScript, JSON, YAML ve TOML dosyalarında bir girinti düzeyi iki boşluktur. JSON, YAML ve TOML hataları yazarken editörde ve **Sorunlar** panelinde görünür. YAML doğrulaması için uygulamayı çalıştırdığınız Python ortamına `requirements.txt` bağımlılıklarını kurun.

@@ -196,6 +196,7 @@ class Window(PresentationFeatures, LanguageFeatures, FilesFeatures, ProjectsFeat
         self.file_monitor.shutdown()
         self.terminal_tabs.shutdown()
         self.test_panel.shutdown()
+        self.notes_panel.shutdown()
         if self.update_worker and self.update_worker.isRunning():
             self.update_worker.requestInterruption()
             self.update_worker.wait(5000)

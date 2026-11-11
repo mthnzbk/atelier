@@ -121,6 +121,41 @@ class StudioIntegration(unittest.TestCase):
         self.assertEqual(editor.viewportMargins().left(), editor.gutter_width())
         self.assertFalse(editor.gutter.grab().isNull())
 
+    def test_project_notes_filter_navigate_and_refresh_open_files(self):
+        window = self.window
+        closed = self.root / 'closed_notes.py'
+        closed.write_text('fake = "# FIXME: string"\n# TODO: Check input\n', encoding='utf-8')
+        (self.root / 'theme.css').write_text('/* FIXME: Improve contrast */\n', encoding='utf-8')
+        ignored = self.root / '.venv'
+        ignored.mkdir()
+        (ignored / 'ignored.py').write_text('# TODO: Ignore\n', encoding='utf-8')
+        edited = self.file('working.py', '# TODO: disk version\n')
+        edited.editor.setPlainText('# FIXME: unsaved change\n')
+        window.actions['project_notes'].trigger()
+        panel = window.notes_panel
+        self.wait(lambda: len(panel.rows) == 3)
+        self.assertEqual({'Check input', 'Improve contrast', 'unsaved change'},
+                         {row['text'] for row in panel.rows})
+        panel.kind.setCurrentText('FIXME')
+        self.assertEqual(2, panel.listing.topLevelItemCount())
+        panel.kind.setCurrentText('Tümü')
+        panel.filter.setText('closed_notes')
+        self.assertEqual(1, panel.listing.topLevelItemCount())
+        item = panel.listing.topLevelItem(0)
+        self.assertEqual('2', item.text(3))
+        panel.listing.itemClicked.emit(item, 0)
+        self.assertEqual(closed, window.current.path)
+        self.assertEqual(1, window.editor.textCursor().blockNumber())
+        self.assertEqual(2, window.editor.textCursor().positionInBlock())
+        panel.filter.clear()
+        edited.editor.setPlainText('# TODO: changed while visible\n')
+        self.wait(lambda: any(row['text'] == 'changed while visible' for row in panel.rows))
+        other = self.root / 'other-project'
+        other.mkdir()
+        (other / 'read.py').write_text('# FIXME: other project\n', encoding='utf-8')
+        window.set_project(other)
+        self.wait(lambda: len(panel.rows) == 1 and panel.rows[0]['text'] == 'other project')
+
     def test_peek_definition_opens_inline_and_navigates_on_request(self):
         from PySide6.QtWidgets import QPushButton
 

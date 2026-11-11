@@ -186,6 +186,9 @@ class PresentationFeatures:
         self.test_panel.navigate.connect(self.goto_test)
         self.bottom.addTab(self.test_panel, 'Testler')
         self.build_navigation_tab()
+        from atelier.ui.project_notes import ProjectNotesPanel
+        self.notes_panel = ProjectNotesPanel(self)
+        self.bottom.addTab(self.notes_panel, 'Notlar')
 
     def build_output_tab(self):
         output_page = QWidget()
@@ -389,6 +392,7 @@ class PresentationFeatures:
         action('symbols', 'Dosyadaki fonksiyon ve sınıflar…',
                'Ctrl+Shift+M', self.document_symbols, 'Kod')
         action('project_symbols', 'Projede sembol ara…', 'Ctrl+T', self.project_symbols, 'Kod')
+        action('project_notes', 'Proje notlarını göster', '', self.show_project_notes, 'Görünüm')
         action('merge_conflicts', 'Git çakışmalarını çöz…', '', self.resolve_conflicts, 'Kod')
         action('breakpoints', 'Kesme noktalarını yönet…', '', self.show_breakpoints, 'Çalıştır')
         action('back', 'Önceki kod konumu', 'Alt+Left', lambda: self.navigate_history(-1), 'Kod')
@@ -587,6 +591,10 @@ class PresentationFeatures:
     def show_tests(self):
         self.bottom.show()
         self.bottom.setCurrentWidget(self.test_panel)
+
+    def show_project_notes(self):
+        self.bottom.show()
+        self.bottom.setCurrentWidget(self.notes_panel)
 
     def goto_test(self, path, line):
         self.remember_location()

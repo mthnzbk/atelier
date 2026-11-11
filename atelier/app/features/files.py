@@ -36,6 +36,7 @@ class FilesFeatures:
         self.tabs.setCurrentWidget(doc)
         self.open_document(doc)
         self.file_monitor.track(doc)
+        self.notes_panel.source_changed(doc)
         if doc.path and str(doc.path) in self.coverage_data:
             for editor in doc.editors:
                 editor.coverage_lines = dict(self.coverage_data[str(doc.path)])
@@ -312,6 +313,7 @@ class FilesFeatures:
         doc.external_bar.hide()
         self.file_monitor.track(doc)
         self.refresh_tabs()
+        self.notes_panel.source_changed(doc)
         self.update_position()
         if doc is self.current or target == self.root / 'atelier.toml':
             self.profile_selector.refresh()
@@ -371,6 +373,7 @@ class FilesFeatures:
         if self.lsp.initialized and doc.synced is not None:
             self.lsp.notify('textDocument/didClose', {'textDocument': {'uri': doc.uri}})
         self.documents.remove(doc)
+        self.notes_panel.source_changed(doc)
         self.tabs.removeTab(self.tabs.indexOf(doc))
         doc.deleteLater()
         self.refresh_problems()
@@ -378,6 +381,7 @@ class FilesFeatures:
     def external_changed(self, doc, digest):
         if doc not in self.documents:
             return
+        self.notes_panel.source_changed(doc)
         doc.external_pending = True
         doc.external_label.setText('Dosya diskte silindi. Yerel içeriğiniz korunuyor.' if digest is None else
                                    'Dosya başka bir uygulama tarafından değiştirildi. Yerel içeriğiniz korunuyor.')
