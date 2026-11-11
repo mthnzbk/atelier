@@ -4,7 +4,7 @@ import pyte
 from atelier.runtime.paths import worker_command
 from atelier.ui.icons import for_text
 from PySide6.QtCore import Qt, QProcess, QTimer, Signal
-from PySide6.QtGui import QTextCursor, QKeySequence
+from PySide6.QtGui import QTextCursor, QKeySequence, QPainter
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit, QPushButton, QLabel, QApplication
 
 
@@ -14,11 +14,33 @@ class TerminalView(QPlainTextEdit):
 
     def __init__(self):
         super().__init__()
+        self.terminal_cursor = None
         self.setReadOnly(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         self.setStyleSheet('QPlainTextEdit {font-family:Consolas; font-size:11pt;}')
+
+    def set_terminal_cursor(self, cursor):
+        self.terminal_cursor = QTextCursor(cursor) if cursor is not None else None
+        self.viewport().update()
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if self.terminal_cursor is None or not self.hasFocus():
+            return
+        rect = self.cursorRect(self.terminal_cursor)
+        if self.viewport().rect().intersects(rect):
+            with QPainter(self.viewport()) as painter:
+                painter.fillRect(rect.x(), rect.y(), 2, rect.height(), self.palette().text())
+
+    def focusInEvent(self, event):
+        super().focusInEvent(event)
+        self.viewport().update()
+
+    def focusOutEvent(self, event):
+        super().focusOutEvent(event)
+        self.viewport().update()
 
     def keyPressEvent(self, event):
         if event.matches(QKeySequence.StandardKey.Paste) or (event.key() == Qt.Key.Key_V and event.modifiers(
@@ -64,8 +86,7 @@ class TerminalPanel(QWidget):
         self.process.readyReadStandardOutput.connect(self.read)
         self.process.readyReadStandardError.connect(self.error_output)
         self.process.errorOccurred.connect(lambda _: self.label.setText(self.process.errorString()))
-        self.process.finished.connect(
-            lambda *_: self.label.setText('Terminal kapandı · Oturumu yeniden başlatabilirsiniz'))
+        self.process.finished.connect(self.process_finished)
         self.buffer = bytearray()
         self.ready = False
         self.prompt_idle = False
@@ -168,6 +189,11 @@ class TerminalPanel(QWidget):
         if text:
             self.label.setText(text[-250:])
 
+    def process_finished(self, *_):
+        self.ready = False
+        self.view.set_terminal_cursor(None)
+        self.label.setText('Terminal kapandı · Oturumu yeniden başlatabilirsiniz')
+
     def resize_terminal(self):
         self.resize_timer.start()
 
@@ -197,8 +223,11 @@ class TerminalPanel(QWidget):
             self.view.setPlainText(text)
         block = self.view.document().findBlockByNumber(len(history) + self.screen.cursor.y)
         cursor = QTextCursor(block)
-        cursor.setPosition(min(block.position() + self.screen.cursor.x,
-                           block.position() + len(block.text())))
+        row = self.screen.buffer[self.screen.cursor.y]
+        prefix = ''.join(row[x].data if x in row else ' ' for x in range(self.screen.cursor.x))
+        offset = len(prefix.encode('utf-16-le')) // 2
+        cursor.setPosition(block.position() + min(offset, block.length() - 1))
+        self.view.set_terminal_cursor(cursor if self.ready and not self.screen.cursor.hidden else None)
         if selected:
             maximum = self.view.document().characterCount() - 1
             cursor.setPosition(min(anchor, maximum))
@@ -212,11 +241,15 @@ class TerminalPanel(QWidget):
     def clear(self):
         self.screen.reset()
         self.view.clear()
+        self.view.set_terminal_cursor(None)
+        if self.ready:
+            self.render_timer.start()
 
     def shutdown(self):
         self.render_timer.stop()
         self.resize_timer.stop()
         self.ready = False
+        self.view.set_terminal_cursor(None)
         if self.process.state() != QProcess.ProcessState.NotRunning:
             self.send({'close': True})
             if not self.process.waitForFinished(900):

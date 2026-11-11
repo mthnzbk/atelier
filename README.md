@@ -12,7 +12,7 @@ Durum çubuğundaki **Python** düğmesi veya **Çalıştır → Python durumu�
 
 **Dosya → Son projeler…** (`Ctrl+Alt+P`) daha önce açtığınız projeleri listeler. Sık kullandığınız projeleri **Sabitle** ile listenin başına alın. Komut paletinde proje adını arayarak klasörüne ve kayıtlı oturumuna dönebilirsiniz.
 
-`Ctrl+Tab` son kullanılan sekmeye geçer. Ctrl'yi basılı tutup Tab'a tekrar basarak diğer sekmelere geçebilir, Shift ile yönü tersine çevirebilirsiniz. `Ctrl+Shift+T` kapatılan dosya sekmesini diskteki içeriğiyle ve önceki imleç konumuyla açar.
+`Ctrl+Tab` sekme çubuğunda sağdaki, `Ctrl+Shift+Tab` soldaki editör sekmesine geçer. Son sekmeden sonra ilk sekmeye dönülür. `Ctrl+Shift+T` kapatılan dosya sekmesini diskteki içeriğiyle ve önceki imleç konumuyla açar.
 
 JSON, YAML, HTML, CSS, JavaScript ve TOML dosyaları otomatik renklendirilir. HTML'de `<di` yazıp öneriyi seçerek etiket ekleyin veya Ctrl+Space ile önerileri açın. `html5`, `a`, `img`, `link`, `form`, `input`, `table` ve `script` kısaltmaları Tab ile genişler. Tab sonraki düzenlenebilir alana geçer.
 
@@ -191,8 +191,8 @@ Kurulumdan sonra Windows'ta baslat.bat dosyasına çift tıklayarak editörü a�
 | Bloğu katla/aç | Ctrl+Shift+[ veya satır numarasının sağındaki −/+ |
 | Tüm blokları aç | Ctrl+Shift+] |
 | Komut paleti | Ctrl+Shift+P |
-| Son kullanılan sekmeye geç | Ctrl+Tab |
-| Son kullanılan sekmelerde geri git | Ctrl+Shift+Tab |
+| Sonraki sekmeye geç | Ctrl+Tab |
+| Önceki sekmeye geç | Ctrl+Shift+Tab |
 | Kapatılan dosya sekmesini aç | Ctrl+Shift+T |
 | Test paneli | Ctrl+Alt+T |
 | Koşullu kesme noktası | Shift+F9 |

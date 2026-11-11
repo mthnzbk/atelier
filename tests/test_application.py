@@ -831,7 +831,7 @@ class StudioIntegration(unittest.TestCase):
         self.wait(lambda: terminal.prompt_idle and 'ATELIER-BUSY-DONE' in ''.join(output))
         self.assertEqual(second_pid, terminal.process.processId())
 
-    def test_recent_tabs_and_reopen_shortcuts(self):
+    def test_visual_tab_order_and_reopen_shortcuts(self):
         w = self.window
         untitled = w.current
         a = self.file('a.py', 'a = 1\n')
@@ -842,20 +842,17 @@ class StudioIntegration(unittest.TestCase):
         a.editor.setFocus()
         self.app.processEvents()
         QTest.keyClick(a.editor, Qt.Key.Key_Tab, Qt.KeyboardModifier.ControlModifier)
+        self.assertIs(w.current, b)
+        QTest.keyClick(b.editor, Qt.Key.Key_Tab, Qt.KeyboardModifier.ControlModifier)
         self.assertIs(w.current, c)
         QTest.keyClick(c.editor, Qt.Key.Key_Tab, Qt.KeyboardModifier.ControlModifier)
         self.assertIs(w.current, a)
         QTest.keyClick(a.editor, Qt.Key.Key_Tab,
                        Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier)
-        self.assertIs(w.current, b)
-        with patch.object(QApplication, 'keyboardModifiers',
-                          return_value=Qt.KeyboardModifier.ControlModifier):
-            w.actions['recent_tab'].trigger()
-            self.assertIs(w.current, a)
-            w.actions['recent_tab'].trigger()
-            self.assertIs(w.current, c)
-            QTest.keyRelease(c.editor, Qt.Key.Key_Control)
-            self.assertFalse(w.tab_cycle)
+        self.assertIs(w.current, c)
+        w.tabs.tabBar().moveTab(w.tabs.indexOf(c), 0)
+        QTest.keyClick(c.editor, Qt.Key.Key_Tab, Qt.KeyboardModifier.ControlModifier)
+        self.assertIs(w.current, a)
         w.tabs.setCurrentWidget(b)
         cursor = b.editor.textCursor()
         cursor.setPosition(3)
@@ -867,6 +864,26 @@ class StudioIntegration(unittest.TestCase):
         self.assertEqual(self.root / 'b.py', w.current.path)
         self.assertEqual(3, w.editor.textCursor().position())
         self.assertEqual(index, w.tabs.currentIndex())
+
+    def test_terminal_caret_tracks_vt_cursor_and_visibility(self):
+        w = self.window
+        w.show_terminal()
+        terminal = w.terminal
+        self.wait(lambda: terminal.ready and bool(terminal.view.toPlainText().strip()))
+        view = terminal.view
+        self.wait(view.hasFocus)
+        terminal.clear()
+        terminal.stream.feed('A界B\x1b[D')
+        terminal.render()
+        self.assertEqual(2, view.terminal_cursor.position())
+        painted = view.viewport().grab().toImage()
+        terminal.stream.feed('\x1b[?25l')
+        terminal.render()
+        self.assertIsNone(view.terminal_cursor)
+        self.assertNotEqual(painted, view.viewport().grab().toImage())
+        terminal.stream.feed('\x1b[?25h')
+        terminal.render()
+        self.assertEqual(painted, view.viewport().grab().toImage())
 
     def test_recent_projects_pin_and_restore_from_palette(self):
         from atelier.projects.recent import RecentProjects

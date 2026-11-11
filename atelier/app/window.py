@@ -2,7 +2,7 @@
 import os
 import sys
 from pathlib import Path
-from PySide6.QtCore import QEvent, QTimer, QSettings, QProcess, Qt, Signal
+from PySide6.QtCore import QEvent, QTimer, QSettings, QProcess, Signal
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
 from atelier.debugger.client import Debugger
@@ -72,9 +72,6 @@ class Window(PresentationFeatures, LanguageFeatures, FilesFeatures, ProjectsFeat
         self.restoring = True
         self.watch_expressions = []
         self.documents = []
-        self.tab_recency = []
-        self.tab_cycle = []
-        self.cycling_tab = False
         self.closed_tabs = []
         self.lsp = None
         self.workers = []
@@ -157,11 +154,6 @@ class Window(PresentationFeatures, LanguageFeatures, FilesFeatures, ProjectsFeat
         return self.current.editor if self.current else None
 
     def eventFilter(self, watched, event):
-        if self.tab_cycle and (
-            (event.type() == QEvent.Type.KeyRelease and event.key() == Qt.Key.Key_Control)
-            or event.type() == QEvent.Type.ApplicationDeactivate
-        ):
-            self.finish_tab_cycle()
         if event.type() == QEvent.Type.FocusIn:
             for doc in self.documents:
                 if watched in doc.editors:
@@ -191,7 +183,6 @@ class Window(PresentationFeatures, LanguageFeatures, FilesFeatures, ProjectsFeat
         self.checkpoint(clean=True)
         self.save_layout()
         self.closing = True
-        self.finish_tab_cycle()
         self.save_queue.clear()
         self.git_refresh_timer.stop()
         self.search_generation += 1

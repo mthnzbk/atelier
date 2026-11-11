@@ -280,9 +280,9 @@ class PresentationFeatures:
         action('recent_projects', 'Son projeler…', 'Ctrl+Alt+P', self.show_recent_projects, 'Dosya')
         action('python_status', 'Python durumu…', '', self.show_python_status, 'Çalıştır')
         action('reopen_tab', 'Kapatılan sekmeyi aç', 'Ctrl+Shift+T', self.reopen_closed_tab, 'Dosya')
-        action('recent_tab', 'Son kullanılan sekmeye geç', 'Ctrl+Tab', self.cycle_recent_tabs, 'Görünüm')
-        action('recent_tab_reverse', 'Son kullanılan sekmelerde geri git', 'Ctrl+Shift+Tab',
-               lambda: self.cycle_recent_tabs(-1), 'Görünüm')
+        action('recent_tab', 'Sonraki sekmeye geç', 'Ctrl+Tab', self.cycle_tabs, 'Görünüm')
+        action('recent_tab_reverse', 'Önceki sekmeye geç', 'Ctrl+Shift+Tab',
+               lambda: self.cycle_tabs(-1), 'Görünüm')
         action('history', 'Dosya geçmişi…', '', self.show_file_history, 'Dosya')
         action('profiles', 'Çalıştırma profilleri…', '', self.run_profiles_dialog, 'Çalıştır')
         action('project_tasks', 'Proje komutları…', '', self.project_task_picker, 'Çalıştır')

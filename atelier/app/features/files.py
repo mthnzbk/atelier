@@ -6,8 +6,7 @@ import tokenize
 import uuid
 import difflib
 from pathlib import Path
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QMessageBox
 from atelier.projects.settings import SAVE_ACTIONS
 from atelier.languages.formatting import LANGUAGES as WEB_FORMAT_LANGUAGES
 from atelier.runtime.tasks import TaskWorker
@@ -58,9 +57,6 @@ class FilesFeatures:
 
     def tab_changed(self, *_):
         self.profile_selector.refresh()
-        if not self.cycling_tab:
-            self.finish_tab_cycle()
-            self.remember_current_tab()
         for doc in self.documents:
             for editor in doc.editors:
                 editor.popup.hide()
@@ -70,37 +66,12 @@ class FilesFeatures:
         if hasattr(self, 'git_timer'):
             self.git_refresh_timer.start()
 
-    def remember_current_tab(self):
-        doc = self.current
-        if doc:
-            if doc in self.tab_recency:
-                self.tab_recency.remove(doc)
-            self.tab_recency.insert(0, doc)
-
-    def finish_tab_cycle(self):
-        if self.tab_cycle:
-            self.tab_cycle.clear()
-            QApplication.instance().removeEventFilter(self)
-            self.remember_current_tab()
-
-    def cycle_recent_tabs(self, step=1):
-        if len(self.tab_recency) < 2:
+    def cycle_tabs(self, step=1):
+        count = self.tabs.count()
+        if count < 2:
             return
-        held = bool(QApplication.keyboardModifiers() & Qt.KeyboardModifier.ControlModifier)
-        if not self.tab_cycle:
-            self.tab_cycle = self.tab_recency.copy()
-            if held:
-                QApplication.instance().installEventFilter(self)
-        index = self.tab_cycle.index(self.current)
-        target = self.tab_cycle[(index + step) % len(self.tab_cycle)]
-        self.cycling_tab = True
-        try:
-            self.tabs.setCurrentWidget(target)
-            target.editor.setFocus()
-        finally:
-            self.cycling_tab = False
-        if not held:
-            self.finish_tab_cycle()
+        self.tabs.setCurrentIndex((self.tabs.currentIndex() + step) % count)
+        self.current.editor.setFocus()
 
     def reopen_closed_tab(self):
         while self.closed_tabs:
@@ -353,9 +324,6 @@ class FilesFeatures:
             self.new()
 
     def remove_document(self, doc):
-        self.finish_tab_cycle()
-        if doc in self.tab_recency:
-            self.tab_recency.remove(doc)
         self.cancel_save(doc)
         doc.timer.stop()
         doc.completion_timer.stop()
